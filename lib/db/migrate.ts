@@ -8,7 +8,8 @@ config({
 });
 
 const runMigrate = async () => {
-  let connectionString = process.env.POSTGRES_URL;
+  // Support both POSTGRES_URL and DATABASE_URL (Supabase uses DATABASE_URL)
+  let connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 
   // Fallback: Build URL from separate variables if POSTGRES_URL not set or has issues
   if (!connectionString && process.env.POSTGRES_HOST) {
