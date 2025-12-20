@@ -1,6 +1,7 @@
 import "server-only";
 
 import { supabase } from "../supabase/client";
+import type { Document, Suggestion } from "./schema";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { ChatSDKError } from "../errors";
 import type { AppUsage } from "../usage";
@@ -341,15 +342,7 @@ export async function getVotesByChatId({ id }: { id: string }) {
 }
 
 // Document functions - skip these for SmartCFO (not needed for chat)
-// Define Document type for proper typing
-interface Document {
-  id: string;
-  userId: string;
-  content: string;
-  title: string;
-  kind: string;
-  createdAt: Date;
-}
+// Using Document type from schema.ts
 
 export async function saveDocument(params: any): Promise<Document[]> {
   console.log("saveDocument called but not implemented for SmartCFO");
@@ -368,14 +361,7 @@ export async function deleteDocumentsByIdAfterTimestamp(params: any): Promise<Do
   return [];
 }
 
-// Suggestion type for proper typing
-interface Suggestion {
-  id: string;
-  documentId: string;
-  userId: string;
-  content: string;
-  createdAt: Date;
-}
+// Using Suggestion type from schema.ts
 
 export async function saveSuggestions(params: any): Promise<void> {
   return;
