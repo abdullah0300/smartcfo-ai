@@ -341,20 +341,30 @@ export async function getVotesByChatId({ id }: { id: string }) {
 }
 
 // Document functions - skip these for SmartCFO (not needed for chat)
-export async function saveDocument(params: any) {
+// Define Document type for proper typing
+interface Document {
+  id: string;
+  userId: string;
+  content: string;
+  title: string;
+  kind: string;
+  createdAt: Date;
+}
+
+export async function saveDocument(params: any): Promise<Document[]> {
   console.log("saveDocument called but not implemented for SmartCFO");
   return [];
 }
 
-export async function getDocumentsById({ id }: { id: string }) {
+export async function getDocumentsById({ id }: { id: string }): Promise<Document[]> {
   return [];
 }
 
-export async function getDocumentById({ id }: { id: string }) {
+export async function getDocumentById({ id }: { id: string }): Promise<Document | null> {
   return null;
 }
 
-export async function deleteDocumentsByIdAfterTimestamp(params: any) {
+export async function deleteDocumentsByIdAfterTimestamp(params: any): Promise<Document[]> {
   return [];
 }
 
