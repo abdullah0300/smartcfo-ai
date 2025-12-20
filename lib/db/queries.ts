@@ -367,7 +367,7 @@ export async function getSuggestionsByDocumentId(params: any) {
 }
 
 // Get message by ID
-export async function getMessageById({ id }: { id: string }) {
+export async function getMessageById({ id }: { id: string }): Promise<DBMessage[]> {
   // Would need to search through all chats - not efficient
   // Return empty for now
   return [];
