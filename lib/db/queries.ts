@@ -368,11 +368,20 @@ export async function deleteDocumentsByIdAfterTimestamp(params: any): Promise<Do
   return [];
 }
 
-export async function saveSuggestions(params: any) {
+// Suggestion type for proper typing
+interface Suggestion {
+  id: string;
+  documentId: string;
+  userId: string;
+  content: string;
+  createdAt: Date;
+}
+
+export async function saveSuggestions(params: any): Promise<void> {
   return;
 }
 
-export async function getSuggestionsByDocumentId(params: any) {
+export async function getSuggestionsByDocumentId(params: any): Promise<Suggestion[]> {
   return [];
 }
 
