@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import type { User } from "@/lib/types/session";
 
 // Create Supabase client for server-side auth
 export const supabaseAuth = createClient(
@@ -10,11 +11,7 @@ export const supabaseAuth = createClient(
 export type UserType = "regular" | "guest";
 
 export interface Session {
-  user: {
-    id: string;
-    email: string;
-    type: UserType;
-  } | null;
+  user: User | undefined;
 }
 
 // Get the current session from Supabase
@@ -22,7 +19,6 @@ export async function auth(): Promise<Session | null> {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("sb-access-token")?.value;
-    const refreshToken = cookieStore.get("sb-refresh-token")?.value;
 
     if (!accessToken) {
       return null;
