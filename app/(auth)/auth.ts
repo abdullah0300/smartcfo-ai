@@ -59,8 +59,9 @@ export async function signIn(email: string, password: string) {
 }
 
 // Sign out
-export async function signOut() {
+export async function signOut(options?: { redirectTo?: string }) {
   // Client-side will clear cookies
+  // redirectTo is handled by the form/component
   return { success: true };
 }
 
