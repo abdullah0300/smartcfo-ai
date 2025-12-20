@@ -1,14 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import type { User } from "@/lib/types/session";
+import type { User, UserType } from "@/lib/types/session";
+
+// Re-export UserType for consumers
+export type { UserType };
 
 // Create Supabase client for server-side auth
 export const supabaseAuth = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
-export type UserType = "regular" | "guest";
 
 export interface Session {
   user: User | undefined;
