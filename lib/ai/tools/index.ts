@@ -8,6 +8,7 @@ import { clientTools } from "./clients";
 import { vendorTools } from "./vendors";
 import { categoryTools } from "./categories";
 import { invoiceTools } from "./invoices";
+import { projectTools } from "./projects";
 
 /**
  * ==============================================================
@@ -32,6 +33,9 @@ export const smartCFOTools = {
 
     // === INVOICE TOOLS ===
     ...invoiceTools,
+
+    // === PROJECT TOOLS ===
+    ...projectTools,
 };
 
 // Export type for the tools registry
