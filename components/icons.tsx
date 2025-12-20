@@ -1211,3 +1211,71 @@ export const WarningIcon = ({ size = 16 }: { size?: number }) => {
     </svg>
   );
 };
+
+export const MicrophoneIcon = ({
+  size = 16,
+  ...props
+}: { size?: number } & React.SVGProps<SVGSVGElement>) => (
+  <svg
+    height={size}
+    strokeLinejoin="round"
+    style={{ color: "currentcolor", ...props.style }}
+    viewBox="0 0 16 16"
+    width={size}
+    {...props}
+  >
+    <path
+      clipRule="evenodd"
+      d="M8 1C6.89543 1 6 1.89543 6 3V7C6 8.10457 6.89543 9 8 9C9.10457 9 10 8.10457 10 7V3C10 1.89543 9.10457 1 8 1ZM4.5 3C4.5 1.067 6.067 -0.5 8 -0.5C9.933 -0.5 11.5 1.067 11.5 3V7C11.5 8.933 9.933 10.5 8 10.5C6.067 10.5 4.5 8.933 4.5 7V3ZM3.5 7C3.5 6.58579 3.16421 6.25 2.75 6.25C2.33579 6.25 2 6.58579 2 7C2 9.76142 4.01472 12.0472 6.6499 12.4531L6.25 14.5H5C4.58579 14.5 4.25 14.8358 4.25 15.25C4.25 15.6642 4.58579 16 5 16H8H11C11.4142 16 11.75 15.6642 11.75 15.25C11.75 14.8358 11.4142 14.5 11 14.5H9.75L9.35013 12.4531C11.9853 12.0472 14 9.76142 14 7C14 6.58579 13.6642 6.25 13.25 6.25C12.8358 6.25 12.5 6.58579 12.5 7C12.5 9.48528 10.4853 11.5 8 11.5C5.51472 11.5 3.5 9.48528 3.5 7Z"
+      fill="currentColor"
+      fillRule="evenodd"
+    />
+  </svg>
+);
+
+export const SpeakerIcon = ({ size = 16 }: { size?: number }) => (
+  <svg
+    height={size}
+    strokeLinejoin="round"
+    style={{ color: "currentcolor" }}
+    viewBox="0 0 16 16"
+    width={size}
+  >
+    <path
+      clipRule="evenodd"
+      d="M7.5 2.5L4.5 5H2C1.44772 5 1 5.44772 1 6V10C1 10.5523 1.44772 11 2 11H4.5L7.5 13.5V2.5ZM9.5 5.5C10.0523 5.5 10.5 5.94772 10.5 6.5V9.5C10.5 10.0523 10.0523 10.5 9.5 10.5V12C10.8807 12 12 10.8807 12 9.5V6.5C12 5.11929 10.8807 4 9.5 4V5.5ZM9.5 2.5C11.7091 2.5 13.5 4.29086 13.5 6.5V9.5C13.5 11.7091 11.7091 13.5 9.5 13.5V15C12.5376 15 15 12.5376 15 9.5V6.5C15 3.46243 12.5376 1 9.5 1V2.5Z"
+      fill="currentColor"
+      fillRule="evenodd"
+    />
+  </svg>
+);
+
+export const SpeakerPlayingIcon = ({ size = 16 }: { size?: number }) => (
+  <svg
+    height={size}
+    strokeLinejoin="round"
+    style={{ color: "currentcolor" }}
+    viewBox="0 0 16 16"
+    width={size}
+  >
+    <path
+      d="M7.5 2.5L4.5 5H2C1.44772 5 1 5.44772 1 6V10C1 10.5523 1.44772 11 2 11H4.5L7.5 13.5V2.5Z"
+      fill="currentColor"
+    />
+    <path
+      d="M10 5C10.5 5.5 11 6.5 11 8C11 9.5 10.5 10.5 10 11"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.5"
+    />
+    <path
+      d="M12 3C13 4 14 5.5 14 8C14 10.5 13 12 12 13"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="1.5"
+    />
+  </svg>
+);
+

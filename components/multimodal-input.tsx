@@ -41,6 +41,7 @@ import {
   PaperclipIcon,
   StopIcon,
 } from "./icons";
+import { VoiceChatButton } from "./voice-chat-button";
 import { PreviewAttachment } from "./preview-attachment";
 import { SuggestedActions } from "./suggested-actions";
 import { Button } from "./ui/button";
@@ -128,7 +129,13 @@ function PureMultimodalInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<string[]>([]);
 
-  const submitForm = useCallback(() => {
+  const submitForm = useCallback((textOverride?: string) => {
+    const textToSend = textOverride ?? input;
+    
+    if (!textToSend.trim() && attachments.length === 0) {
+      return; // Nothing to send
+    }
+    
     window.history.pushState({}, "", `/chat/${chatId}`);
 
     sendMessage({
@@ -142,7 +149,7 @@ function PureMultimodalInput({
         })),
         {
           type: "text",
-          text: input,
+          text: textToSend,
         },
       ],
     });
@@ -373,6 +380,13 @@ function PureMultimodalInput({
               fileInputRef={fileInputRef}
               selectedModelId={selectedModelId}
               status={status}
+            />
+            <VoiceChatButton
+              disabled={status !== "ready"}
+              onTranscript={(transcript) => {
+                // Submit directly with transcript to avoid state race condition
+                submitForm(transcript);
+              }}
             />
             <ModelSelectorCompact
               onModelChange={onModelChange}
