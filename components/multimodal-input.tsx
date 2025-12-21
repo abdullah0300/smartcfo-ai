@@ -42,6 +42,7 @@ import {
   StopIcon,
 } from "./icons";
 import { VoiceChatButton } from "./voice-chat-button";
+import { VoiceAgentButton } from "./voice-agent-button";
 import { PreviewAttachment } from "./preview-attachment";
 import { SuggestedActions } from "./suggested-actions";
 import { Button } from "./ui/button";
@@ -388,6 +389,7 @@ function PureMultimodalInput({
                 submitForm(transcript);
               }}
             />
+            <VoiceAgentButton disabled={status !== "ready"} />
             <ModelSelectorCompact
               onModelChange={onModelChange}
               selectedModelId={selectedModelId}
