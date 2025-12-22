@@ -17,21 +17,37 @@ export interface Session {
 
 // Get the current session from Supabase
 export async function auth(): Promise<Session | null> {
+  console.log("[AUTH] auth() called");
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("sb-access-token")?.value;
 
+    console.log("[AUTH] Access token present:", !!accessToken);
+    console.log("[AUTH] Token length:", accessToken?.length || 0);
+
     if (!accessToken) {
+      console.log("[AUTH] ❌ No access token in cookies - returning null");
       return null;
     }
 
     // Verify the access token with Supabase
+    console.log("[AUTH] Calling supabase.auth.getUser()...");
+    const startTime = Date.now();
     const { data: { user }, error } = await supabaseAuth.auth.getUser(accessToken);
+    const elapsed = Date.now() - startTime;
+    console.log(`[AUTH] getUser() took ${elapsed}ms`);
 
-    if (error || !user) {
+    if (error) {
+      console.log("[AUTH] ❌ getUser error:", error.message);
       return null;
     }
 
+    if (!user) {
+      console.log("[AUTH] ❌ No user returned from getUser");
+      return null;
+    }
+
+    console.log("[AUTH] ✅ User found:", user.id);
     return {
       user: {
         id: user.id,
@@ -39,7 +55,8 @@ export async function auth(): Promise<Session | null> {
         type: "regular",
       },
     };
-  } catch (_error) {
+  } catch (error) {
+    console.error("[AUTH] ❌ Exception in auth():", error);
     return null;
   }
 }

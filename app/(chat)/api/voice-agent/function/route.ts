@@ -8,10 +8,15 @@ import { auth } from "@/app/(auth)/auth";
 import { executeVoiceTool } from "@/lib/voice/voice-tools";
 
 export async function POST(request: Request) {
+  console.log("[VoiceFunction] POST request received");
   try {
     // Authenticate user
+    console.log("[VoiceFunction] Calling auth()...");
     const session = await auth();
+    console.log("[VoiceFunction] Auth result:", session ? `User: ${session.user?.id}` : "null");
+    
     if (!session?.user?.id) {
+      console.log("[VoiceFunction] ❌ Returning 401 - no session or user id");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

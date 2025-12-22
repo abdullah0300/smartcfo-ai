@@ -622,23 +622,48 @@ CURRENT DATE & TIME
 // MAIN SYSTEM PROMPT BUILDER
 // ============================================
 
+// Voice-specific rules (appended in voice mode instead of artifacts)
+const voiceRulesPrompt = `
+==================================================
+VOICE MODE ACTIVE
+==================================================
+You are in VOICE MODE. Adjust your responses:
+- Keep responses SHORT (1-2 sentences max)
+- Speak naturally, conversationally
+- Don't read out formatting (bullets, headers, etc.)
+- Don't say "let me check" or "one moment" - just do it
+- Confirm actions briefly: "Done! Added 5000 income from Nexterix"
+- For previews, summarize key details only
+- Use simple, everyday words
+`;
+
 export const systemPrompt = ({
   selectedChatModel,
   requestHints,
   userContext,
+  mode = "chat",
 }: {
   selectedChatModel: string;
   requestHints: RequestHints;
   userContext?: UserContext;
+  mode?: "chat" | "voice";
 }) => {
   const dateTimePrompt = getRequestPromptFromHints(requestHints);
   const contextPrompt = getUserContextPrompt(userContext || defaultUserContext);
 
-  if (selectedChatModel === "chat-model-reasoning") {
-    return `${regularPrompt}\n\n${dateTimePrompt}\n\n${contextPrompt}`;
+  // Base prompt (same for all modes)
+  const basePrompt = `${regularPrompt}\n\n${dateTimePrompt}\n\n${contextPrompt}`;
+
+  // Mode-specific additions
+  if (mode === "voice") {
+    return `${basePrompt}\n\n${voiceRulesPrompt}`;
   }
 
-  return `${regularPrompt}\n\n${dateTimePrompt}\n\n${contextPrompt}\n\n${artifactsPrompt}`;
+  if (selectedChatModel === "chat-model-reasoning") {
+    return basePrompt;
+  }
+
+  return `${basePrompt}\n\n${artifactsPrompt}`;
 };
 
 // ============================================

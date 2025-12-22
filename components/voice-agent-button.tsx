@@ -31,10 +31,15 @@ export function VoiceAgentButton({
 
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const inputContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const audioQueueRef = useRef<AudioBuffer[]>([]);
-  const isPlayingRef = useRef(false);
+  
+  // Sample rate measurement for debugging
+  const sampleCountRef = useRef<number>(0);
+  const measurementStartRef = useRef<number>(0);
+  const lastRateLogRef = useRef<number>(0);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -68,11 +73,26 @@ export function VoiceAgentButton({
       });
       mediaStreamRef.current = stream;
 
-      // 3. Create audio context for output (24kHz)
+      // 3. Create audio context for output at 24kHz (matching Deepgram output)
       audioContextRef.current = new AudioContext({ sampleRate: 24000 });
+      
+      // CRITICAL: Log actual sample rate - browser may not honor our request!
+      console.log(`[VoiceAgent] ⚡ Requested sample rate: 24000, Actual: ${audioContextRef.current.sampleRate}`);
+      if (audioContextRef.current.sampleRate !== 24000) {
+        console.warn(`[VoiceAgent] ⚠️ Sample rate mismatch! Audio may play at wrong speed.`);
+      }
+      
+      // 4. Load PCM worklet processor for audio playback
+      await audioContextRef.current.audioWorklet.addModule("/pcm-processor.js");
+      workletNodeRef.current = new AudioWorkletNode(
+        audioContextRef.current,
+        "pcm-player-processor"
+      );
+      workletNodeRef.current.connect(audioContextRef.current.destination);
 
       // 4. Connect to Deepgram Voice Agent
       const ws = new WebSocket(wsUrl, ["token", token]);
+      ws.binaryType = "arraybuffer"; // Receive binary data as ArrayBuffer
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -84,14 +104,38 @@ export function VoiceAgentButton({
       };
 
       ws.onmessage = async (event) => {
-        if (event.data instanceof Blob) {
-          handleAudioData(event.data);
-        } else {
+        // Binary data (audio) comes as ArrayBuffer
+        if (event.data instanceof ArrayBuffer) {
+          if (event.data.byteLength > 0) {
+            const sampleCount = event.data.byteLength / 2; // Int16 = 2 bytes per sample
+            
+            // Track samples for rate measurement
+            const now = performance.now();
+            if (measurementStartRef.current === 0) {
+              measurementStartRef.current = now;
+              sampleCountRef.current = 0;
+            }
+            sampleCountRef.current += sampleCount;
+            
+            // Log actual sample rate every 2 seconds
+            const elapsed = (now - measurementStartRef.current) / 1000;
+            if (elapsed >= 2 && now - lastRateLogRef.current > 2000) {
+              const actualRate = Math.round(sampleCountRef.current / elapsed);
+              console.log(`[VoiceAgent] 📊 SAMPLE RATE: Actual=${actualRate} samples/sec (Expected=24000)`);
+              lastRateLogRef.current = now;
+            }
+            
+            console.log(`[VoiceAgent] 🔊 Audio chunk received: ${event.data.byteLength} bytes`);
+            handleAudioData(event.data);
+          }
+        } else if (typeof event.data === "string") {
+          // Text messages are JSON
           try {
             const data = JSON.parse(event.data);
+            console.log(`[VoiceAgent] 📨 Message type: ${data.type}`, data);
             handleMessage(data);
           } catch (e) {
-            console.warn("[VoiceAgent] Failed to parse message");
+            console.warn("[VoiceAgent] Failed to parse message:", event.data.substring(0, 100));
           }
         }
       };
@@ -122,6 +166,20 @@ export function VoiceAgentButton({
 
     switch (type) {
       case "UserStartedSpeaking":
+        // BARGE-IN: User is interrupting - immediately stop AI audio playback
+        // Note: Deepgram Voice Agent handles barge-in server-side automatically
+        // We just need to clear the client-side audio buffer
+        console.log("[VoiceAgent] 🛑 User started speaking - clearing audio buffer (barge-in)");
+        
+        // Clear the PCM playback buffer immediately
+        if (workletNodeRef.current) {
+          workletNodeRef.current.port.postMessage('clear');
+        }
+        
+        // Reset sample rate measurement for next response
+        measurementStartRef.current = 0;
+        sampleCountRef.current = 0;
+        
         setState("listening");
         break;
 
@@ -152,6 +210,7 @@ export function VoiceAgentButton({
   }, []);
 
   const handleFunctionCall = async (data: Record<string, unknown>) => {
+    console.log("[VoiceAgent] 🔧 FunctionCallRequest received:", data);
     const functions = data.functions as Array<{
       id: string;
       name: string;
@@ -159,13 +218,22 @@ export function VoiceAgentButton({
       client_side: boolean;
     }>;
 
-    if (!functions || functions.length === 0) return;
+    if (!functions || functions.length === 0) {
+      console.log("[VoiceAgent] ⚠️ No functions in request");
+      return;
+    }
 
     for (const func of functions) {
-      if (!func.client_side) continue;
+      console.log(`[VoiceAgent] 📞 Function: ${func.name}, client_side: ${func.client_side}`);
+      if (!func.client_side) {
+        console.log(`[VoiceAgent] ⏭️ Skipping server-side function: ${func.name}`);
+        continue;
+      }
 
       try {
         const parameters = JSON.parse(func.arguments || "{}");
+        console.log(`[VoiceAgent] 🚀 Calling ${func.name} with:`, parameters);
+        const startTime = Date.now();
 
         const response = await fetch("/api/voice-agent/function", {
           method: "POST",
@@ -177,20 +245,27 @@ export function VoiceAgentButton({
           }),
         });
 
-        if (!response.ok) throw new Error("Function call failed");
+        const elapsed = Date.now() - startTime;
+        console.log(`[VoiceAgent] ⏱️ Function ${func.name} took ${elapsed}ms`);
+
+        if (!response.ok) {
+          console.error(`[VoiceAgent] ❌ Function ${func.name} HTTP error: ${response.status}`);
+          throw new Error("Function call failed");
+        }
 
         const { result } = await response.json();
+        console.log(`[VoiceAgent] ✅ Function ${func.name} result:`, result);
 
-        wsRef.current?.send(
-          JSON.stringify({
-            type: "FunctionCallResponse",
-            id: func.id,
-            name: func.name,
-            content: JSON.stringify(result),
-          })
-        );
+        const responsePayload = {
+          type: "FunctionCallResponse",
+          id: func.id,
+          name: func.name,
+          content: JSON.stringify(result),
+        };
+        console.log(`[VoiceAgent] 📤 Sending FunctionCallResponse:`, responsePayload);
+        wsRef.current?.send(JSON.stringify(responsePayload));
       } catch (error) {
-        console.error("[VoiceAgent] Function call error:", error);
+        console.error(`[VoiceAgent] ❌ Function ${func.name} error:`, error);
         wsRef.current?.send(
           JSON.stringify({
             type: "FunctionCallResponse",
@@ -201,55 +276,63 @@ export function VoiceAgentButton({
         );
       }
     }
+    console.log("[VoiceAgent] 🔧 FunctionCallRequest processing complete");
   };
 
-  const handleAudioData = async (blob: Blob) => {
-    if (!audioContextRef.current) return;
+  // Create WAV header for linear16 PCM data
+  const createWavHeader = (dataLength: number, sampleRate: number): ArrayBuffer => {
+    const buffer = new ArrayBuffer(44);
+    const view = new DataView(buffer);
+    
+    // RIFF header
+    view.setUint32(0, 0x52494646, false); // "RIFF"
+    view.setUint32(4, dataLength + 36, true); // file size - 8
+    view.setUint32(8, 0x57415645, false); // "WAVE"
+    
+    // fmt chunk
+    view.setUint32(12, 0x666d7420, false); // "fmt "
+    view.setUint32(16, 16, true); // chunk size
+    view.setUint16(20, 1, true); // audio format (PCM)
+    view.setUint16(22, 1, true); // num channels
+    view.setUint32(24, sampleRate, true); // sample rate
+    view.setUint32(28, sampleRate * 2, true); // byte rate
+    view.setUint16(32, 2, true); // block align
+    view.setUint16(34, 16, true); // bits per sample
+    
+    // data chunk
+    view.setUint32(36, 0x64617461, false); // "data"
+    view.setUint32(40, dataLength, true); // data size
+    
+    return buffer;
+  };
+
+  const handleAudioData = async (arrayBuffer: ArrayBuffer) => {
+    if (!workletNodeRef.current) {
+      console.warn("[VoiceAgent] ⚠️ Audio received but worklet not ready");
+      return;
+    }
 
     try {
-      const arrayBuffer = await blob.arrayBuffer();
-      const int16Array = new Int16Array(arrayBuffer);
-      const float32Array = new Float32Array(int16Array.length);
-
-      for (let i = 0; i < int16Array.length; i++) {
-        float32Array[i] = int16Array[i] / 32768;
+      // Ensure proper byte alignment for Int16Array
+      const alignedBuffer = arrayBuffer.slice(0, arrayBuffer.byteLength);
+      const int16Data = new Int16Array(alignedBuffer);
+      
+      if (int16Data.length === 0) {
+        console.log("[VoiceAgent] ⚠️ Empty audio chunk");
+        return;
       }
-
-      const audioBuffer = audioContextRef.current.createBuffer(
-        1,
-        float32Array.length,
-        24000
-      );
-      audioBuffer.getChannelData(0).set(float32Array);
-
-      audioQueueRef.current.push(audioBuffer);
-      playNextAudio();
+      
+      // Convert int16 to float32 (-1.0 to 1.0)
+      const float32Data = new Float32Array(int16Data.length);
+      for (let i = 0; i < int16Data.length; i++) {
+        float32Data[i] = int16Data[i] / 32768.0;
+      }
+      
+      // Post audio samples directly to worklet for playback
+      workletNodeRef.current.port.postMessage(float32Data);
     } catch (error) {
-      console.error("[VoiceAgent] Audio error:", error);
+      console.error("[VoiceAgent] ❌ Audio processing error:", error);
     }
-  };
-
-  const playNextAudio = () => {
-    if (
-      isPlayingRef.current ||
-      audioQueueRef.current.length === 0 ||
-      !audioContextRef.current
-    )
-      return;
-
-    isPlayingRef.current = true;
-    const audioBuffer = audioQueueRef.current.shift()!;
-
-    const source = audioContextRef.current.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(audioContextRef.current.destination);
-
-    source.onended = () => {
-      isPlayingRef.current = false;
-      playNextAudio();
-    };
-
-    source.start();
   };
 
   const startAudioCapture = (stream: MediaStream, ws: WebSocket) => {
@@ -288,6 +371,11 @@ export function VoiceAgentButton({
       processorRef.current = null;
     }
 
+    if (workletNodeRef.current) {
+      workletNodeRef.current.disconnect();
+      workletNodeRef.current = null;
+    }
+
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
@@ -297,9 +385,6 @@ export function VoiceAgentButton({
       audioContextRef.current.close();
       audioContextRef.current = null;
     }
-
-    audioQueueRef.current = [];
-    isPlayingRef.current = false;
 
     setState("idle");
     setTranscript("");

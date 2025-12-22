@@ -4,17 +4,18 @@
  */
 
 import { NextResponse } from "next/server";
+import { geolocation } from "@vercel/functions";
 import { auth } from "@/app/(auth)/auth";
 import { supabase } from "@/lib/supabase/client";
 import { voiceAgentFunctions } from "@/lib/voice/voice-tools";
 import {
-  regularPrompt,
-  getUserContextPrompt,
+  systemPrompt,
+  type RequestHints,
   type UserContext,
 } from "@/lib/ai/prompts";
 
 // Voice Agent configuration endpoint
-export async function GET() {
+export async function GET(request: Request) {
   try {
     // Authenticate user
     const session = await auth();
@@ -102,19 +103,16 @@ export async function GET() {
       timezone: userSettings?.timezone || "UTC",
     };
 
-    // Build system instructions for voice agent
-    const contextPrompt = getUserContextPrompt(userContext);
-    const voiceInstructions = `${regularPrompt}
-
-${contextPrompt}
-
-VOICE CONVERSATION RULES:
-- Keep responses SHORT (1-2 sentences max)
-- Speak naturally, conversationally
-- Don't say "let me check" - just do it
-- Confirm actions briefly: "Done! Added 5000 income from Nexterix"
-- For previews, summarize key details only
-`;
+    // Build system instructions using the same systemPrompt as chat (with voice mode)
+    const { longitude, latitude, city, country } = geolocation(request);
+    const requestHints: RequestHints = { longitude, latitude, city, country };
+    
+    const voiceInstructions = systemPrompt({
+      selectedChatModel: "gpt-4o-mini",
+      requestHints,
+      userContext,
+      mode: "voice",
+    });
 
     // Voice Agent Settings Configuration (exact format per Deepgram docs)
     const agentConfig = {
