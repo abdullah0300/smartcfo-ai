@@ -1,4 +1,5 @@
 import { createDeepSeek } from "@ai-sdk/deepseek";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import {
   customProvider,
   extractReasoningMiddleware,
@@ -10,6 +11,11 @@ import { isTestEnvironment } from "../constants";
 const deepseek = createDeepSeek({
   apiKey: process.env.DEEPSEEK_API_KEY,
   baseURL: "https://api.deepseek.com/beta",  // Strict mode - fixes UUID quoting issues
+});
+
+// Initialize Anthropic Claude client
+const anthropic = createAnthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 export const myProvider = isTestEnvironment
@@ -31,13 +37,15 @@ export const myProvider = isTestEnvironment
   })()
   : customProvider({
     languageModels: {
-      // DeepSeek-V3.2 for general chat
+      // SmartCFO Base - DeepSeek for general chat (cost-effective)
       "chat-model": deepseek("deepseek-chat"),
       // DeepSeek with thinking mode for complex reasoning
       "chat-model-reasoning": wrapLanguageModel({
         model: deepseek("deepseek-chat"),
         middleware: extractReasoningMiddleware({ tagName: "think" }),
       }),
+      // SmartCFO Nexus - Claude for advanced reasoning and tool use
+      "claude-chat": anthropic("claude-sonnet-4-20250514"),
       // DeepSeek for title generation (lighter tasks)
       "title-model": deepseek("deepseek-chat"),
       // DeepSeek for artifact generation

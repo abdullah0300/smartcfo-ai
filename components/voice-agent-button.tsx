@@ -20,14 +20,20 @@ type VoiceAgentState =
 interface VoiceAgentButtonProps {
   className?: string;
   disabled?: boolean;
+  onConversationText?: (role: 'user' | 'assistant', content: string, isNewTurn: boolean) => void;
 }
 
 export function VoiceAgentButton({
   className,
   disabled,
+  onConversationText,
 }: VoiceAgentButtonProps) {
   const [state, setState] = useState<VoiceAgentState>("idle");
   const [transcript, setTranscript] = useState("");
+  
+  // Track last role for turn detection (new turn = role changed)
+  const lastRoleRef = useRef<'user' | 'assistant' | null>(null);
+  const turnResetRef = useRef<boolean>(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -184,18 +190,35 @@ export function VoiceAgentButton({
         break;
 
       case "ConversationText":
+        // Use ConversationText for real-time chat display (research confirmed this is correct)
         const role = data.role as string;
         const content = data.content as string;
+        
+        // Detect if this is a new turn (role changed or explicitly reset)
+        const isNewTurn = turnResetRef.current || role !== lastRoleRef.current;
+        lastRoleRef.current = role as 'user' | 'assistant';
+        turnResetRef.current = false;
+        
         if (role === "user") {
           setTranscript(content);
           setState("thinking");
+          onConversationText?.('user', content, isNewTurn);
         } else if (role === "assistant") {
           setState("speaking");
+          onConversationText?.('assistant', content, isNewTurn);
         }
+        break;
+
+      case "History":
+        // History is for context management, not for UI display
+        // Just log it for debugging
+        console.log("[VoiceAgent] History event (context):", data.role || 'function_call');
         break;
 
       case "AgentAudioDone":
         setState("listening");
+        // Mark next ConversationText as new turn (AI finished speaking)
+        turnResetRef.current = true;
         break;
 
       case "FunctionCallRequest":

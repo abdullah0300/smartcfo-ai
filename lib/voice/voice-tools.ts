@@ -434,6 +434,27 @@ export const voiceAgentFunctions = [
       required: ["confirmed", "userId"],
     },
   },
+  {
+    name: "sendInvoiceEmail",
+    description: "Send invoice email to client. Use confirmed=false to preview the email first, then confirmed=true to actually send it. This is for SENDING invoice to client via email, NOT marking as paid.",
+    parameters: {
+      type: "object",
+      properties: {
+        invoiceId: { type: "string", description: "Invoice UUID" },
+        invoiceNumber: { type: "string", description: "Invoice number like INV-001" },
+        customMessage: { type: "string", description: "Optional custom message for email body" },
+        ccEmails: { 
+          type: "array", 
+          items: { type: "string" },
+          description: "Optional CC email addresses" 
+        },
+        attachPdf: { type: "boolean", description: "Attach PDF to email (default false)" },
+        confirmed: { type: "boolean", description: "false=preview email, true=send email" },
+        userId: { type: "string", description: "User ID" },
+      },
+      required: ["confirmed", "userId"],
+    },
+  },
 
   // === RECURRING INVOICE FUNCTIONS ===
   {

@@ -389,7 +389,39 @@ function PureMultimodalInput({
                 submitForm(transcript);
               }}
             />
-            <VoiceAgentButton disabled={status !== "ready"} />
+            <VoiceAgentButton 
+              disabled={status !== "ready"} 
+              onConversationText={(role, content, isNewTurn) => {
+                // ConversationText is for real-time display (research confirmed)
+                // Accumulate content for same role, new message only on role change
+                setMessages((prev) => {
+                  const lastMessage = prev[prev.length - 1];
+                  
+                  // If same role and NOT new turn, APPEND content (accumulation)
+                  if (lastMessage && lastMessage.role === role && !isNewTurn) {
+                    const updated = [...prev];
+                    const existingText = lastMessage.parts?.[0]?.type === 'text' 
+                      ? (lastMessage.parts[0] as { type: 'text'; text: string }).text 
+                      : '';
+                    // Append new content with space separator
+                    const newText = existingText ? `${existingText} ${content}` : content;
+                    updated[prev.length - 1] = {
+                      ...lastMessage,
+                      parts: [{ type: 'text' as const, text: newText }],
+                    };
+                    return updated;
+                  }
+                  
+                  // New turn or role change = add new message
+                  const messageId = `voice-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+                  return [...prev, {
+                    id: messageId,
+                    role,
+                    parts: [{ type: 'text' as const, text: content }],
+                  }];
+                });
+              }}
+            />
             <ModelSelectorCompact
               onModelChange={onModelChange}
               selectedModelId={selectedModelId}
