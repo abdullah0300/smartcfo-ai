@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-ancestors 'self' https://smartcfo.webcraftio.com https://*.webcraftio.com",
+            value: "frame-ancestors 'self' https://smartcfo.webcraftio.com https://*.webcraftio.com http://localhost:* http://127.0.0.1:*",
           },
           {
             key: "X-Frame-Options",
