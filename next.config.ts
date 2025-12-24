@@ -14,6 +14,32 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Allow iframe embedding from main SaaS domain
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self' https://smartcfo.webcraftio.com https://*.webcraftio.com",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "ALLOW-FROM https://smartcfo.webcraftio.com",
+          },
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "https://smartcfo.webcraftio.com",
+          },
+          {
+            key: "Access-Control-Allow-Credentials",
+            value: "true",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
