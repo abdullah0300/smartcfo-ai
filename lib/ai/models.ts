@@ -17,4 +17,9 @@ export const chatModels: ChatModel[] = [
     name: "SmartCFO Nexus",
     description: "Advanced reasoning and superior tool use for complex operations",
   },
+  {
+    id: "gemini-chat",
+    name: "SmartCFO Vision",
+    description: "Image and document understanding for invoices, receipts, and files",
+  },
 ];

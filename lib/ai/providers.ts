@@ -1,5 +1,6 @@
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import {
   customProvider,
   extractReasoningMiddleware,
@@ -16,6 +17,11 @@ const deepseek = createDeepSeek({
 // Initialize Anthropic Claude client
 const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+// Initialize Google Gemini client for vision/multimodal support
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
 
 export const myProvider = isTestEnvironment
@@ -46,10 +52,11 @@ export const myProvider = isTestEnvironment
       }),
       // SmartCFO Nexus - Claude for advanced reasoning and tool use
       "claude-chat": anthropic("claude-sonnet-4-20250514"),
+      // SmartCFO Vision - Gemini for images, files, documents (uses Google $300 credit)
+      "gemini-chat": google("gemini-2.5-flash"),
       // DeepSeek for title generation (lighter tasks)
       "title-model": deepseek("deepseek-chat"),
       // DeepSeek for artifact generation
       "artifact-model": deepseek("deepseek-chat"),
     },
   });
-

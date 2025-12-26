@@ -422,80 +422,100 @@ export function VoiceAgentButton({
     }
   }, [state, startConversation, stopConversation]);
 
-  // Button content based on state
+  // Button content based on state - icon only for clean design
   const getButtonContent = () => {
     switch (state) {
       case "connecting":
-        return (
-          <>
-            <LoadingSpinner />
-            <span className="ml-2">Connecting...</span>
-          </>
-        );
+        return <LoadingSpinner />;
       case "listening":
-        return (
-          <>
-            <MicrophoneIcon className="animate-pulse text-green-500" />
-            <span className="ml-2">Listening...</span>
-          </>
-        );
+        return <MicrophoneIcon />;
       case "thinking":
-        return (
-          <>
-            <LoadingSpinner />
-            <span className="ml-2">Thinking...</span>
-          </>
-        );
+        return <LoadingSpinner />;
       case "speaking":
-        return (
-          <>
-            <SpeakerIcon className="animate-pulse text-blue-500" />
-            <span className="ml-2">Speaking...</span>
-          </>
-        );
+        return <SpeakerIcon />;
       default:
-        return (
-          <>
-            <VoiceAgentIcon />
-            <span className="ml-2">Voice</span>
-          </>
-        );
+        return <VoiceAgentIcon />;
+    }
+  };
+  // Always show animated waveform when active, static when idle
+  const isActive = state !== "idle";
+
+  // Status text for the badge above icon
+  const getStatusText = () => {
+    switch (state) {
+      case "connecting": return "Connecting...";
+      case "listening": return "Listening";
+      case "thinking": return "Thinking...";
+      case "speaking": return "Speaking";
+      default: return null;
     }
   };
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="relative flex flex-col items-center">
+      {/* Status text above icon */}
+      {isActive && (
+        <span className="absolute -top-6 text-xs text-muted-foreground whitespace-nowrap animate-fade-in">
+          {getStatusText()}
+        </span>
+      )}
+      {/* Pulsing ring when idle */}
+      {state === "idle" && (
+        <span className="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 opacity-60 animate-ping-slow" />
+      )}
       <Button
-        variant={state === "idle" ? "outline" : "default"}
-        size="sm"
+        variant="ghost"
+        size="icon"
         onClick={toggleConversation}
         disabled={disabled}
         className={cn(
-          "flex items-center gap-1 transition-all",
-          state !== "idle" && "bg-primary text-primary-foreground",
+          "relative z-10 rounded-full transition-all duration-300 text-white",
+          state === "idle" && "h-8 w-8 bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md hover:shadow-lg",
+          isActive && "h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg",
           className
         )}
       >
-        {getButtonContent()}
+        <VoiceAgentIcon isActive={isActive} />
       </Button>
-
-      {/* Show transcript when active */}
-      {state !== "idle" && transcript && (
-        <div className="text-sm text-muted-foreground max-w-xs truncate">
-          You: {transcript}
-        </div>
-      )}
     </div>
   );
 }
 
-// Icons
-function VoiceAgentIcon() {
+// Animated Waveform Icon
+function VoiceAgentIcon({ isActive = false }: { isActive?: boolean }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M8 1a2 2 0 0 0-2 2v4a2 2 0 1 0 4 0V3a2 2 0 0 0-2-2Z" />
-      <path d="M4.5 7a.5.5 0 0 0-1 0 4.5 4.5 0 0 0 4 4.473V13H6a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1H8.5v-1.527A4.5 4.5 0 0 0 12.5 7a.5.5 0 0 0-1 0 3.5 3.5 0 1 1-7 0Z" />
-      <circle cx="13" cy="3" r="2" fill="#22c55e" />
+    <svg 
+      width={isActive ? "24" : "20"} 
+      height={isActive ? "24" : "20"} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className="transition-all duration-300"
+    >
+      {/* Sound wave bars with animation when active */}
+      <line 
+        x1="4" y1="10" x2="4" y2="14" 
+        className={isActive ? "animate-wave-1" : ""}
+      />
+      <line 
+        x1="8" y1="7" x2="8" y2="17" 
+        className={isActive ? "animate-wave-2" : ""}
+      />
+      <line 
+        x1="12" y1="4" x2="12" y2="20" 
+        className={isActive ? "animate-wave-3" : ""}
+      />
+      <line 
+        x1="16" y1="7" x2="16" y2="17" 
+        className={isActive ? "animate-wave-4" : ""}
+      />
+      <line 
+        x1="20" y1="10" x2="20" y2="14" 
+        className={isActive ? "animate-wave-5" : ""}
+      />
     </svg>
   );
 }

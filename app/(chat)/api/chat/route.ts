@@ -197,12 +197,14 @@ export async function POST(request: Request) {
     let finalMergedUsage: AppUsage | undefined;
 
     const stream = createUIMessageStream({
-      execute: ({ writer: dataStream }) => {
+      execute: async ({ writer: dataStream }) => {
         console.log("[CHAT] Stream execute callback started");
+        // AI SDK v6 - convertToModelMessages is now async
+        const modelMessages = await convertToModelMessages(uiMessages);
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
           system: systemPrompt({ selectedChatModel, requestHints, userContext }),
-          messages: convertToModelMessages(uiMessages),
+          messages: modelMessages,
           stopWhen: stepCountIs(5),
           experimental_activeTools:
             selectedChatModel === "chat-model-reasoning"

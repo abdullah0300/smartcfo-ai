@@ -389,6 +389,10 @@ function PureMultimodalInput({
                 submitForm(transcript);
               }}
             />
+            <ModelSelectorCompact
+              onModelChange={onModelChange}
+              selectedModelId={selectedModelId}
+            />
             <VoiceAgentButton 
               disabled={status !== "ready"} 
               onConversationText={(role, content, isNewTurn) => {
@@ -421,10 +425,6 @@ function PureMultimodalInput({
                   }];
                 });
               }}
-            />
-            <ModelSelectorCompact
-              onModelChange={onModelChange}
-              selectedModelId={selectedModelId}
             />
           </PromptInputTools>
 
