@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SessionReceiver } from "@/components/session-receiver";
 
 import "./globals.css";
 
@@ -74,10 +75,10 @@ export default function RootLayout({
           enableSystem
         >
           <Toaster position="top-center" />
+          <SessionReceiver />
           {children}
         </ThemeProvider>
       </body>
     </html>
   );
 }
-
